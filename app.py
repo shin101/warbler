@@ -387,15 +387,22 @@ def homepage():
     - logged in: 100 most recent messages of followed_users
     """
     
-    likes = [message.id for message in g.user.likes]
     if g.user:
+        likes = [message.id for message in g.user.likes]
         following_ids = [f.id for f in g.user.following]
-        messages = (Message
-                    .query
-                    .filter(Message.user_id.in_(following_ids))
-                    .order_by(Message.timestamp.desc())
-                    .limit(100)
-                    .all())
+        if following_ids:
+            messages = (Message
+                        .query
+                        .filter(Message.user_id.in_(following_ids))
+                        .order_by(Message.timestamp.desc())
+                        .limit(100)
+                        .all())
+        else:
+            messages = (Message
+                        .query
+                        .order_by(Message.timestamp.desc())
+                        .limit(100)
+                        .all())
 
         # g.user.follower output = [<User #27: gomezrobert, randy24@house.com>, <User #36: nicholasmorgan, hevans@gmail.com>]
         return render_template('home.html', messages=messages, likes=likes)

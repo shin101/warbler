@@ -51,8 +51,11 @@ class MessageViewTestCase(TestCase):
 
         db.session.commit()
 
+    def tearDown(self):
+        db.session.rollback()
+
     def test_add_message(self):
-        """Can use add a message?"""
+        """Can user add a message?"""
 
         # Since we need to change the session to mimic logging in,
         # we need to use the changing-session trick:
@@ -61,8 +64,8 @@ class MessageViewTestCase(TestCase):
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.testuser.id
 
-            # Now, that session setting is saved, so we can have
-            # the rest of ours test
+            # Now that session setting is saved, so we can have
+            # the rest of our test
 
             resp = c.post("/messages/new", data={"text": "Hello"})
 
@@ -71,3 +74,38 @@ class MessageViewTestCase(TestCase):
 
             msg = Message.query.one()
             self.assertEqual(msg.text, "Hello")
+
+
+    def test_delete_message(self):
+        """Can user delete a message?"""
+
+        # Since we need to change the session to mimic logging in,
+        # we need to use the changing-session trick:
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
+
+            # Now that session setting is saved, so we can have
+            # the rest of our test
+
+            resp = c.post("/messages/new", data={"text": "Hello"})
+
+            Message.query.delete()
+
+            # db.session.delete(msg)
+            db.session.commit()
+            msg = Message.query.all()
+
+            # Make sure it redirects
+
+            self.assertEqual(msg,[])
+            self.assertEqual(resp.status_code, 302)
+
+
+    # def test_check_word(self):
+    #     with app.test_client() as client:
+    #         client.get('/')
+    #         res = client.get('/check-word?word=spaghetti')
+    #         html = res.get_data(as_text=True)
+    #         self.assertEqual(res.json['result'],'not-on-board')
